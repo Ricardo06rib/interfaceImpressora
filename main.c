@@ -1,158 +1,113 @@
 #include"lib.h"
-/*
 
-int main () {
-
-    setlocale(LC_ALL, "Portuguese");
-
-    //Alerta para execução
-    printf("+-----------------------------------+\n");
-    printf("|   Aviso!                          |\n");
-    printf("|   Verifique se há alguma pasta    |\n");
-    printf("|   com espaço no nome e tire       |\n");
-    printf("|   para o funcionamento do         |\n");
-    printf("|   programa                        |\n");
-    printf("+-----------------------------------+\n\n");
-    system("pause");
-    system("cls");
-
-    ListaDupla* l = criar_lista();
-    int opcao = 0;
-
-    //definindo tamanho de string da impressora
-    char impressora[100] = "";
-
-    //menu
-    while(1){
-        printf("Selecione a opção:\n\n");
-        printf("1 -> Imprimir\n");
-        printf("2 -> Adicionar arquivo na fila de impressão\n");
-        printf("3 -> Visualizar a fila de impressão\n");
-        printf("4 -> Selecionar impressora\n");
-        printf("5 -> Sair\n\n");
-        printf("Digite sua opção: ");
-        scanf("%d", &opcao);
-        system("cls");
-
-        switch(opcao){
-
-        case 1:
-            if(esta_vazia(l)) {
-                //alert: fila vazia
-                printf("ERRO - A fila de impressão está vazia\n\n");
-                //flag para encerrar programa
-                goto exit;
-            }
-            if(impressora[0] == '\0') {
-                //alert: sem impressora
-                printf("ERRO - Impressora não selecionada\n\n");
-                goto exit;
-            }
-            //chama execução da impressora enquanto houver itens na fila
-            while(!esta_vazia(l)){
-                imprimir_frente(l);
-                imprimir(remover_item(l), &impressora[0]);
-                system("pause");
-                system("cls");
-            }
-            break;
-
-        //adicionando arquivo na fila (caminho + arquivo)
-        case 2:
-            char path[TAMANHO] = "";
-            printf("Digite o path do arquivo: ");
-            getchar();
-            fgets(path, TAMANHO, stdin);
-            path[strcspn(path, "\n")] = '\0';
-            enqueue(l, path);
-            break;
-
-        //exibindo fila
-        case 3:
-            if(esta_vazia(l)) break;
-            imprimir_frente(l);
-            break;
-
-        //exibindo impressoras
-        case 4:
-            printf("As opções de impressão são: \n\n");
-            system("wmic printer get name");
-
-            if(impressora[0] != '\0'){
-                printf("\n\nA opção atual é: %s \n\n", impressora);
-            }
-
-            printf("Digite o nome da impressora: ");
-            getchar();
-            //coletando impressora selecionada
-            fgets(impressora, 100, stdin);
-            impressora[strcspn(impressora, "\n")] = '\0';
-            break;
-
-        case 5:
-            goto exit;
-            break;
-
-        default:
-            printf("\nERRO - Opção inválida\n\n");
-            break;
-        }
-        getchar();
-        exit:
-        system("pause");
-        system("cls");
-        }
-    destruir_lista(l);
-
-    return 0;
-}
-*/
-
-#include <windows.h>
-
-#define ID_BTN 1
-#define ID_BTN2 3
+#define ID_Imprimir 3
+#define ID_Arquivo 4
+#define ID_impressora 5
+#define ID_metodoImpressao 6
+#define ID_visualizarFila 7
 #define ID_EDIT 2
+
+#define ID_TEXTO_FIXO 1
 
 HBRUSH hbrBackground = NULL;
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+HFONT hFontArial30 = NULL;
 
-    switch (msg) {
+char g_textoExibir[256] = "";
+BOOL g_exibirTexto = FALSE;
 
-        case WM_COMMAND:
-            if (LOWORD(wParam) == ID_BTN) {
-                char texto[256];
-                GetWindowText(GetDlgItem(hwnd, ID_EDIT), texto, 256);
+HWND hBtnImprimir;
+HWND hBtnArquivo;
+HWND hBtnImpressora;
+HWND hBtnMetodo;
+HWND hBtnFila;
+HWND hTextoFixo;
 
-                MessageBox(hwnd, texto, "Texto digitado:", MB_OK);
-            }
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
 
-            if(LOWORD(wParam) == ID_BTN2){
-                char texto[256];
-                GetWindowText(GetDlgItem(hwnd, ID_EDIT), texto, 256);
-                printf("%s", texto);
+    switch (msg)
+    {
 
-                ShowWindow(hwnd, 10);
-            }
+    case WM_COMMAND:
+        if (LOWORD(wParam) == ID_Imprimir)
+        {
+            char texto[256];
+            GetWindowText(GetDlgItem(hwnd, ID_EDIT), texto, 256);
 
-            break;
+            MessageBox(hwnd, texto, "Texto digitado:", MB_OK);
+        }
 
-        case WM_CTLCOLORSTATIC:
-            HDC hdcStatic = (HDC) wParam;
-            SetTextColor(hdcStatic, RGB(0,0, 255));
-            SetBkMode(hdcStatic, TRANSPARENT);
-            return (LRESULT) hbrBackground;
-            break;
+        if (LOWORD(wParam) == ID_Arquivo)
+        {
+            //                hwnd = GetDesktopWindow();
+            //                HDC hdc = GetWindowDC(hwnd);
+            //                TextOut(hdc, 100, 100, "Texto na tela", 14);
+            //                ReleaseDC(hwnd, hdc);
+            hbrBackground = CreateSolidBrush(RGB(50, 50, 50));
+            InvalidateRect(hwnd, NULL, TRUE);
+        }
 
-        case WM_DESTROY:
-            if(hbrBackground != NULL) DeleteObject(hbrBackground);
-            PostQuitMessage(0);
-            break;
+        if (LOWORD(wParam) == ID_impressora)
+        {
+        }
+
+        if (LOWORD(wParam) == ID_visualizarFila)
+        {
+            strcpy(g_textoExibir, "Sua fila de impressao esta vazia.");
+
+            g_exibirTexto = TRUE;
+
+            InvalidateRect(hwnd, NULL, TRUE);
+        }
+
+        break;
+
+    case WM_PAINT:
+    {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+
+        if (g_exibirTexto)
+        {
+
+            SelectObject(hdc, hFontArial30);
+
+            SetBkMode(hdc, TRANSPARENT);
+
+            SetTextColor(hdc, RGB(255, 0, 0));
+
+            TextOut(
+                hdc,
+                50,
+                150,
+                g_textoExibir,
+                strlen(g_textoExibir));
+        }
+
+        EndPaint(hwnd, &ps);
+    }
+    break;
+
+    case WM_CTLCOLORSTATIC:
+        HDC hdcStatic = (HDC)wParam;
+        SetTextColor(hdcStatic, RGB(0, 0, 255));
+        SetBkMode(hdcStatic, TRANSPARENT);
+        return (LRESULT)hbrBackground;
+        break;
+
+    case WM_DESTROY:
+        if (hbrBackground != NULL)
+            DeleteObject(hbrBackground);
+        if (hFontArial30 != NULL)
+            DeleteObject(hFontArial30);
+        PostQuitMessage(0);
+        break;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
 
@@ -165,47 +120,102 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     RegisterClass(&wc);
 
+    hFontArial30 = CreateFont(
+        24,
+        0,
+        0,
+        0,
+        FW_BOLD,
+        FALSE,
+        FALSE,
+        FALSE,
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY,
+        DEFAULT_PITCH | FF_SWISS,
+        "Arial"
+    );
+
     HWND hwnd = CreateWindow(
         "MinhaJanela",
-        "janela",
+        "Trabalho do Wagner Moura que o Ricardao que fez",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        500, 200,
+        900, 620,
         NULL, NULL,
         hInstance, NULL
     );
 
     // Texto fixo
-    CreateWindow(
-        "STATIC", "Digite algo:",
+    hTextoFixo = CreateWindow(
+        "STATIC", "Software de Impressao",
         WS_VISIBLE | WS_CHILD,
-        20, 20, 100, 20,
-        hwnd, NULL, hInstance, NULL
+        20, 20, 600, 100,
+        hwnd, (HMENU)ID_TEXTO_FIXO, hInstance, NULL
     );
+
+    if (hTextoFixo != NULL && hFontArial30 != NULL) {
+        SendMessage(hTextoFixo, WM_SETFONT, (WPARAM)hFontArial30, TRUE);
+    }
 
     // Caixa de texto
     CreateWindow(
         "EDIT", "",
         WS_VISIBLE | WS_CHILD | WS_BORDER,
-        20, 50, 200, 25,
+        50, 185, 800, 25,
         hwnd, (HMENU)ID_EDIT, hInstance, NULL
     );
 
-    // Botão
-    CreateWindow(
-        "BUTTON", "Enviar",
+    hBtnImprimir = CreateWindow(
+        "BUTTON", "Imprimir",
         WS_VISIBLE | WS_CHILD,
-        20, 90, 100, 30,
-        hwnd, (HMENU)ID_BTN, hInstance, NULL
+        50, 230, 800, 90,
+        hwnd, (HMENU)ID_Imprimir, hInstance, NULL
     );
+    if (hBtnImprimir != NULL && hFontArial30 != NULL) {
+        SendMessage(hBtnImprimir, WM_SETFONT, (WPARAM)hFontArial30, TRUE);
+    }
 
-    // Botão2
-    CreateWindow(
-        "BUTTON", "printa",
+    hBtnArquivo = CreateWindow(
+        "BUTTON", "Adicionar arquivo",
         WS_VISIBLE | WS_CHILD,
-        200, 90, 100, 30,
-        hwnd, (HMENU)ID_BTN2, hInstance, NULL
+        50, 340, 390, 90,
+        hwnd, (HMENU)ID_Arquivo, hInstance, NULL
     );
+    if (hBtnArquivo != NULL && hFontArial30 != NULL) {
+        SendMessage(hBtnArquivo, WM_SETFONT, (WPARAM)hFontArial30, TRUE);
+    }
+
+    hBtnImpressora = CreateWindow(
+        "BUTTON", "Adicionar impressora",
+        WS_VISIBLE | WS_CHILD,
+        460, 340, 390, 90,
+        hwnd, (HMENU)ID_impressora, hInstance, NULL
+    );
+    if (hBtnImpressora != NULL && hFontArial30 != NULL) {
+        SendMessage(hBtnImpressora, WM_SETFONT, (WPARAM)hFontArial30, TRUE);
+    }
+
+    hBtnMetodo = CreateWindow(
+        "BUTTON", "Escolher metodo \r\nde impressao",
+        WS_VISIBLE | WS_CHILD,
+        50, 450, 390, 90,
+        hwnd, (HMENU)ID_metodoImpressao, hInstance, NULL
+    );
+    if (hBtnMetodo != NULL && hFontArial30 != NULL) {
+        SendMessage(hBtnMetodo, WM_SETFONT, (WPARAM)hFontArial30, TRUE);
+    }
+
+    hBtnFila = CreateWindow(
+        "BUTTON", "Visualizar fila de impressao",
+        WS_VISIBLE | WS_CHILD | BS_MULTILINE,
+        460, 450, 390, 90,
+        hwnd, (HMENU)ID_visualizarFila, hInstance, NULL
+    );
+    if (hBtnFila != NULL && hFontArial30 != NULL) {
+        SendMessage(hBtnFila, WM_SETFONT, (WPARAM)hFontArial30, TRUE);
+    }
 
     ShowWindow(hwnd, nCmdShow);
 
