@@ -10,7 +10,7 @@
 
 typedef struct no{
 
-    char *arquivo;
+    char* arquivo;
     struct no* proximo;
     struct no* anterior;
 

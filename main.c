@@ -1,10 +1,12 @@
-#include"lib.h"
-#include"helper.h"
+#include "lib.h"
+#include "helper.h"
 
 ListaDupla *lista = NULL;
 
+// cor do background
 HBRUSH hbrBackground = NULL;
 
+// fontes
 HFONT textoTitulo = NULL;
 HFONT textoNormal = NULL;
 HFONT textoBotao = NULL;
@@ -12,7 +14,7 @@ HFONT textoBotao = NULL;
 char g_textoExibir[256] = "";
 BOOL g_exibirTexto = FALSE;
 
-//janela principal
+// janela principal
 HWND hBtnImprimir;
 HWND hBtnArquivo;
 HWND hBtnImpressora;
@@ -20,121 +22,109 @@ HWND hBtnMetodo;
 HWND hBtnFila;
 HWND hTextoFixo;
 HWND hBtnSair;
+HWND hBtnArquivoRemover;
 
-//janela add arquivo
+// Janela impressora
+HWND janelaImpressora;
+HWND inputImpressora;
+HWND textoImpressora;
+HWND submitImpressora;
+
+// Janela arquivo
 HWND janelaArquivo;
 HWND inputArquivo;
 HWND textoArquivo;
 HWND submitArquivo;
+
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 
     switch (msg)
     {
-
     case WM_COMMAND:
-        if (LOWORD(wParam) == ID_Imprimir)
+        switch (LOWORD(wParam))
         {
+        case ID_Imprimir:
+            // impressão depende do Pedro
+
+            /*
             char texto[256];
             GetWindowText(GetDlgItem(hwnd, ID_Edit), texto, 256);
 
             MessageBox(hwnd, texto, "Texto digitado:", MB_OK);
-        }
+            */
 
-        if (LOWORD(wParam) == ID_Arquivo)
-        {
+            break;
 
+        case ID_Arquivo:
             ShowWindow(janelaArquivo, 1);
+            break;
 
-//            hbrBackground = CreateSolidBrush(RGB(50, 50, 50));
-//            InvalidateRect(hwnd, NULL, TRUE);
+        case ID_SubmitArquivo:
+            if (lista == NULL)
+                lista = criar_lista();
 
-            char arquivo[TAMANHO];
+            char texto[TAMANHO];
+            GetWindowText(inputArquivo, texto, TAMANHO);
+            printf("\n %s \n",texto);
 
-            if(lista == NULL) lista = criar_lista();
-            //inserir_fim(lista, GetWindowText(GetDlgItem(janelaArquivo, ID_EDIT), texto, 256););
+            inserir_fim(lista, &texto[0]);
+            
+            ShowWindow(janelaArquivo, 0);
+
+            SetWindowText(inputArquivo, "");
+            break;
+
+
+        case ID_Impressora:
+            ShowWindow(janelaImpressora, 1);
+            break;
+
+        case ID_Sair:
+            destruir_lista(lista);
+            PostQuitMessage(0);
+            break;
+
+        case ID_Edit:
+            break;
+
+        default:
+            printf("Comando nao realizado ainda\n");
+            imprimir_frente(lista);
+            break;
         }
-
-        if (LOWORD(wParam) == ID_Impressora)
-        {
-        }
-
-        if (LOWORD(wParam) == ID_VisualizarFila)
-        {
-
-            char texto[256];
-            GetWindowText(GetDlgItem(hwnd, ID_Edit), texto, 256);
-
-            //strcpy(g_textoExibir, "Sua fila de impressao esta vazia.");
-
-            //g_exibirTexto = TRUE;
-
-
-
-//            hwnd = GetDesktopWindow();
-//            HDC hdc = GetWindowDC(hwnd);
-//            TextOut(hdc, 100, 100, "Texto na tela", 14);
-//            ReleaseDC(hwnd, hdc);
-
-            //InvalidateRect(hwnd, NULL, TRUE);
-        }
-
-        if (LOWORD(wParam) == ID_Sair)
-        {
-
-            //destruir_lista(l);
-            PostQuitMessage;
-        }
-
         break;
-
-    // case WM_PAINT:
-    // {
-    //     PAINTSTRUCT ps;
-    //     HDC hdc = BeginPaint(hwnd, &ps);
-
-    //     if (g_exibirTexto)
-    //     {
-
-    //         SelectObject(hdc, hFontArial30);
-
-    //         SetBkMode(hdc, TRANSPARENT);
-
-    //         SetTextColor(hdc, RGB(255, 0, 0));
-
-    //         TextOut(
-    //             hdc,
-    //             50,
-    //             150,
-    //             g_textoExibir,
-    //             strlen(g_textoExibir));
-    //     }
-
-    //     EndPaint(hwnd, &ps);
-    // }
-    //break;
 
     case WM_CTLCOLORSTATIC:
         HDC hdcStatic = (HDC)wParam;
         SetTextColor(hdcStatic, RGB(0, 0, 0));
         SetBkMode(hdcStatic, TRANSPARENT);
         return (LRESULT)hbrBackground;
+    case WM_CLOSE:
+        if (hwnd == janelaArquivo || hwnd == janelaImpressora)
+        {
+            ShowWindow(hwnd, 0);
+            return 0;
+        }
         break;
-
     case WM_DESTROY:
-        if (hbrBackground != NULL) DeleteObject(hbrBackground);
-        if (hwnd == GetActiveWindow() && GetParent(hwnd) == NULL) PostQuitMessage(0);
+        if (hbrBackground != NULL)
+            DeleteObject(hbrBackground);
+        if (hwnd == GetActiveWindow() && GetParent(hwnd) == NULL)
+            PostQuitMessage(0);
         break;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    setlocale(LC_ALL, "Portuguese");
 
-    hbrBackground = CreateSolidBrush(RGB(255,255,255));
+    hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
@@ -147,23 +137,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HWND hwnd = criarJanela("Default", "Software de Impressao", 900, 620, NULL, hInstance);
 
-    hTextoFixo = criarText(hwnd, "Software de Impressao", 50, 20, 600, 100, ID_Titulo, hInstance);
+    hTextoFixo = criarText(hwnd, "Software de Impressao", 220, 40, 600, 100, ID_Titulo, hInstance);
 
-    hBtnImprimir = criarBotao(hwnd, "Imprimir", 50, 230, 390, 90, ID_Imprimir, hInstance);
+    hBtnImprimir = criarBotao(hwnd, "Imprimir", 50, 120, 800, 90, ID_Imprimir, hInstance);
 
-    hBtnArquivo = criarBotao(hwnd, "Adicionar arquivo", 50, 340, 390, 90, ID_Arquivo, hInstance);
+    hBtnArquivo = criarBotao(hwnd, "Adicionar arquivo", 50, 230, 390, 90, ID_Arquivo, hInstance); // 50, 340, 390, 90
+
+    hBtnArquivoRemover = criarBotao(hwnd, "Remover arquivo", 460, 230, 390, 90, ID_remover, hInstance);
 
     hBtnImpressora = criarBotao(hwnd, "Adicionar impressora", 460, 340, 390, 90, ID_Impressora, hInstance);
 
-    hBtnMetodo = criarBotao(hwnd, "Escolher \r\nmetodo de impressao", 50, 450, 390, 90, ID_MetodoImpressao, hInstance);
+    hBtnMetodo = criarBotao(hwnd, "Escolher metodo de impressao", 50, 450, 390, 90, ID_MetodoImpressao, hInstance);
 
-    hBtnFila = criarBotao(hwnd, "Visualizar fila de impressao", 460, 230, 390, 90, ID_VisualizarFila, hInstance);
+    hBtnFila = criarBotao(hwnd, "Visualizar fila de impressao", 50, 340, 390, 90, ID_VisualizarFila, hInstance);
 
     hBtnSair = criarBotao(hwnd, "Sair", 460, 450, 390, 90, ID_Sair, hInstance);
 
     ShowWindow(hwnd, nCmdShow);
-
-    // fim da Janela principal ---------------------------------------------------------------------------------------------------------------
 
     // Janela adicionar arquivo---------------------------------------------------------------------------------------------------------------
 
@@ -175,10 +165,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     submitArquivo = criarBotao(janelaArquivo, "Submit", 300, 100, 110, 40, ID_SubmitArquivo, hInstance);
 
-    // fim da adicionar arquivo---------------------------------------------------------------------------------------------------------------
+    // Janela adicionar impressora------------------------------------------------------------------------------------------------------------
+
+    janelaImpressora = criarJanela("Default", "Impressora", 700, 200, hwnd, hInstance);
+
+    textoImpressora = criarText(janelaImpressora, "Digite o nome da impressora: ", 50, 20, 600, 30, ID_Texto, hInstance);
+
+    inputImpressora = criarInput(janelaImpressora, 50, 55, 600, 30, ID_Edit, hInstance);
+
+    submitImpressora = criarBotao(janelaImpressora, "Submit", 300, 100, 110, 40, ID_SubmitImpressora, hInstance);
 
     MSG msg = {0};
-    while (GetMessage(&msg, NULL, 0, 0)) {
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }

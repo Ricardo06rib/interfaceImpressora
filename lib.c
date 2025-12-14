@@ -68,8 +68,7 @@ void inserir_inicio(ListaDupla *l, char *arquivo)
 
 void inserir_fim(ListaDupla *l, char *arquivo)
 {
-    if (l == NULL)
-        return;
+    if (l == NULL) return;
 
     if (l->fim == NULL)
     {
@@ -84,13 +83,19 @@ void inserir_fim(ListaDupla *l, char *arquivo)
         return;
     }
 
-    novo->arquivo = arquivo;
+    novo->arquivo = malloc(strlen(arquivo) + 1);
+    if(novo->arquivo == NULL){
+        printf("Erro de alocação \n");
+        return;
+    }
+    strcpy(novo->arquivo, arquivo);
     novo->proximo = NULL;
     novo->anterior = l->fim;
 
     l->fim->proximo = novo;
     l->fim = novo;
 }
+
 int remover_item(ListaDupla *l, char *arquivo)
 {
     if (l == NULL || esta_vazia(l))
@@ -160,9 +165,11 @@ void imprimir_tras(ListaDupla *l)
     printf("\n");
     while (final != NULL)
     {
-        printf("path: |%s|\n", final->arquivo);
+        printf("path: |%s| \n", final->arquivo);
         final = final->anterior;
     }
+
+    printf("\n\n");
 }
 
 //-----------------------------------------------------------------------
