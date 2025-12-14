@@ -25,7 +25,7 @@ void destruir_lista(ListaDupla *l)
     while (atual != NULL)
     {
         No *anterior = atual->anterior;
- 
+
         free(atual->arquivo);
         free(atual);
 
@@ -119,7 +119,7 @@ int remover_item(ListaDupla *l, char *arquivo)
             {
                 l->fim = novo->anterior;
             }
-
+            free(novo->arquivo);
             free(novo);
             return 1;
         }
@@ -177,4 +177,18 @@ void imprimir(char *arquivo, char nomeImpressora)
     printf("\n");
     printf("%s", cmd);
     system(cmd);
+}
+
+void impressoraTrasPFrente(ListaDupla *l, char nomeImpressora){
+    while(!esta_vazia(l)){
+        imprimir(l->fim->arquivo, nomeImpressora);
+        remover_item(l, l->fim->arquivo);
+    }
+}
+
+void impressoraFrentePTras(ListaDupla *l, char nomeImpressora){
+    while(!esta_vazia(l)){
+        imprimir(l->inicio->arquivo, nomeImpressora);
+        remover_item(l, l->inicio->arquivo);
+    }
 }

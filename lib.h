@@ -5,7 +5,7 @@
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include<string.h>
+#include <string.h>
 #include <windows.h>
 
 typedef struct no{
@@ -41,3 +41,9 @@ void imprimir_frente(ListaDupla *l);
 void imprimir_tras(ListaDupla *l);
 
 void imprimir(char *arquivo, char nomeImpressora);
+
+//-------------------------------------------------------------------//
+
+void impressoraTrasPFrente(ListaDupla *l, char nomeImpressora);
+
+void impressoraFrentePTras(ListaDupla *l, char nomeImpressora);
