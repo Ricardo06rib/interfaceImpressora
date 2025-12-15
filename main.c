@@ -1,181 +1,309 @@
-#include "lib.h"
-#include "helper.h"
+#define UNICODE
+#define _UNICODE
 
-ListaDupla *lista = NULL;
+#include <windows.h>
+#include <stdio.h>
 
-// cor do background
+#include "headers/helper.h"
+#include "headers/lista.h"
+#include "headers/printer.h"
+
+//modo de impressão
+int impressao = 0;
+//0-> frente para tras
+//1-> tras para frente
+
+//cor
 HBRUSH hbrBackground = NULL;
 
-// fontes
-HFONT textoTitulo = NULL;
-HFONT textoNormal = NULL;
-HFONT textoBotao = NULL;
-
-char g_textoExibir[256] = "";
-BOOL g_exibirTexto = FALSE;
-
-// janela principal
+//janela Principal
+HWND hwnd;
+HWND hTextoFixo;
 HWND hBtnImprimir;
 HWND hBtnArquivo;
-HWND hBtnImpressora;
+HWND hBtnArquivoRemover;
 HWND hBtnMetodo;
 HWND hBtnFila;
-HWND hTextoFixo;
 HWND hBtnSair;
-HWND hBtnArquivoRemover;
 
-// Janela impressora
-HWND janelaImpressora;
-HWND inputImpressora;
-HWND textoImpressora;
-HWND submitImpressora;
+//janela metodo de impressao
+HWND janelaMetodo;
+HWND botao1Metodo;
+HWND botao2Metodo;
 
-// Janela arquivo
-HWND janelaArquivo;
-HWND inputArquivo;
-HWND textoArquivo;
-HWND submitArquivo;
-
+ListaDupla *lista = NULL;
+HWND hEditArquivo = NULL;
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    switch (msg) {
 
-    switch (msg)
-    {
+    case WM_CREATE:
+        lista = criar_lista();
+
+        hTextoFixo = criarText(hwnd, "Software de Impressao", 220, 40, 600, 100, ID_Titulo, NULL);
+        mudaFonte(hTextoFixo, criarFonte(40, 1700, "Arial"));
+
+        hBtnImprimir = criarBotao(hwnd, "Imprimir", 50, 120, 800, 90, ID_Imprimir,  NULL);
+
+        hBtnArquivo = criarBotao(hwnd, "Adicionar arquivo", 50, 230, 390, 90, ID_Arquivo,  NULL);
+
+        hBtnArquivoRemover = criarBotao(hwnd, "Remover arquivo", 460, 230, 390, 90, ID_remover, NULL);
+
+        hBtnMetodo = criarBotao(hwnd, "Escolher metodo de impressao", 460, 340, 390, 90, ID_MetodoImpressao,  NULL);
+
+        hBtnFila = criarBotao(hwnd, "Visualizar fila de impressao", 50, 340, 390, 90, ID_VisualizarFila,  NULL);
+
+        hBtnSair = criarBotao(hwnd, "Sair", 50, 450, 800, 90, ID_Sair,  NULL);
+
+        break;
+
     case WM_COMMAND:
+    {
+
         switch (LOWORD(wParam))
         {
-        case ID_Imprimir:
-            // impressão depende do Pedro
-
-            /*
-            char texto[256];
-            GetWindowText(GetDlgItem(hwnd, ID_Edit), texto, 256);
-
-            MessageBox(hwnd, texto, "Texto digitado:", MB_OK);
-            */
-
-            break;
-
         case ID_Arquivo:
-            ShowWindow(janelaArquivo, 1);
+        {
+            if(lista == NULL) lista = criar_lista();
+
+            char caminho[MAX_PATH];
+
+            if(!abrirExplorer(hwnd, caminho, MAX_PATH)){
+                break;}
+
+            if (strlen(caminho) == 0)
+            {
+                MessageBoxA(hwnd, "Informe o caminho do arquivo.", "Erro", MB_ICONERROR);
+                break;
+            }
+
+            if (GetFileAttributesA(caminho) == INVALID_FILE_ATTRIBUTES)//ver isso dps
+            {
+                MessageBoxA(hwnd, "Arquivo nao encontrado.", "Erro", MB_ICONERROR);
+                break;
+            }
+
+            inserir_fim(lista, caminho);
+            MessageBoxA(hwnd, "Arquivo adicionado a fila.", "Fila", MB_OK);
+            SetWindowTextA(hEditArquivo, "");
             break;
+        }
 
-        case ID_SubmitArquivo:
-            if (lista == NULL)
-                lista = criar_lista();
 
-            char texto[TAMANHO];
-            GetWindowText(inputArquivo, texto, TAMANHO);
-            printf("\n %s \n",texto);
+        case ID_ImprimirInverso:
+        {
+            if (esta_vazia(lista)) {
+                MessageBoxA(hwnd, "Fila vazia", "Erro", MB_ICONERROR);
+                break;
+            }
 
-            inserir_fim(lista, &texto[0]);
-            
-            ShowWindow(janelaArquivo, 0);
+            char impressora[256];
+            DWORD tam = sizeof(impressora);
 
-            SetWindowText(inputArquivo, "");
+            if (!GetDefaultPrinterA(impressora, &tam)) {
+                MessageBoxA(hwnd, "Nenhuma impressora padrao encontrada", "Erro", MB_ICONERROR);
+                break;
+            }
+
+            impressoraTrasPFrente(lista, impressora);
+
+            MessageBoxA(hwnd, "Impressao inversa concluida.", "OK", MB_OK);
             break;
+        }
 
-
-        case ID_Impressora:
-            ShowWindow(janelaImpressora, 1);
+        case ID_Imprimir:
+        {
+            if (esta_vazia(lista)) {
+            MessageBoxA(hwnd, "Fila vazia", "Erro", MB_ICONERROR);
             break;
+            }
 
-        case ID_Sair:
-            destruir_lista(lista);
-            PostQuitMessage(0);
+            char impressora[256];
+            DWORD tam = sizeof(impressora);
+
+            if (!GetDefaultPrinterA(impressora, &tam)) {
+                MessageBoxA(hwnd, "Nenhuma impressora padrao encontrada", "Erro", MB_ICONERROR);
+                break;
+            }
+
+            impressoraFrentePTras(lista, impressora);
+
+            MessageBoxA(hwnd, "Impressao concluida.", "OK", MB_OK);
             break;
+}
 
-        case ID_Edit:
-            break;
-
-        default:
-            printf("Comando nao realizado ainda\n");
+        case ID_VisualizarFila:
+            {
+            MessageBoxA(hwnd, imprimir_frente(lista), "Fila de impressao", MB_OK);
             imprimir_frente(lista);
             break;
-        }
-        break;
+            }
 
-    case WM_CTLCOLORSTATIC:
-        HDC hdcStatic = (HDC)wParam;
-        SetTextColor(hdcStatic, RGB(0, 0, 0));
-        SetBkMode(hdcStatic, TRANSPARENT);
-        return (LRESULT)hbrBackground;
-    case WM_CLOSE:
-        if (hwnd == janelaArquivo || hwnd == janelaImpressora)
+        case ID_remover:
         {
-            ShowWindow(hwnd, 0);
-            return 0;
+            if(esta_vazia(lista)){
+                MessageBoxA(hwnd, "Fila vazia", "Item removido", MB_OK);
+                break;
+            }
+            char buffer[256];
+            snprintf(buffer, sizeof(buffer), "Ultimo arquivo removido:\n\nArquivo %s", lista->fim->arquivo);
+            MessageBoxA(hwnd, buffer, "Item removido", MB_OK);
+            remover_item(lista, lista->fim->arquivo);
+            break;
+        }
+
+        case ID_MetodoImpressao:
+            {
+                ShowWindow(janelaMetodo, 1);
+                break;
+            }
+
+        case ID_Sair:
+            DestroyWindow(hwnd);
+            break;
         }
         break;
+    }
+
+
+        case WM_SIZE:
+        {
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+
+        int larguraJanela = rc.right - rc.left;
+        int alturaJanela  = rc.bottom - rc.top;
+
+        // botão ocupa 50% da largura e 10% da altura
+        int larguraBotao = larguraJanela * 40/100;
+        int alturaBotao  = alturaJanela * 10/100;
+
+        int XbotaoEsq = larguraJanela * 5/100;
+        int XbotaoDir = larguraJanela * 5/100 + larguraBotao + larguraJanela * 5/100;
+
+        int Ybotao = alturaJanela * 40/100;
+
+        int larguraTexto = 500;
+        int alturaTexto = 50;
+
+
+        MoveWindow(hTextoFixo,          (larguraJanela - 375) / 2,   (alturaJanela * 40/100 - alturaTexto) / 2, larguraTexto, alturaTexto, TRUE);
+
+        MoveWindow(hBtnImprimir,        XbotaoEsq,   Ybotao + 0*(alturaBotao + alturaJanela * 5/100), larguraBotao, alturaBotao, TRUE);
+        MoveWindow(hBtnArquivo,         XbotaoDir,   Ybotao + 0*(alturaBotao + alturaJanela * 5/100), larguraBotao, alturaBotao, TRUE);
+        MoveWindow(hBtnArquivoRemover,  XbotaoEsq,   Ybotao + 1*(alturaBotao + alturaJanela * 5/100), larguraBotao, alturaBotao, TRUE);
+        MoveWindow(hBtnMetodo,          XbotaoDir,   Ybotao + 1*(alturaBotao + alturaJanela * 5/100), larguraBotao, alturaBotao, TRUE);
+        MoveWindow(hBtnFila,            XbotaoEsq,   Ybotao + 2*(alturaBotao + alturaJanela * 5/100), larguraBotao, alturaBotao, TRUE);
+        MoveWindow(hBtnSair,            XbotaoDir,   Ybotao + 2*(alturaBotao + alturaJanela * 5/100), larguraBotao, alturaBotao, TRUE);
+        break;
+        }
+
+
     case WM_DESTROY:
-        if (hbrBackground != NULL)
-            DeleteObject(hbrBackground);
-        if (hwnd == GetActiveWindow() && GetParent(hwnd) == NULL)
-            PostQuitMessage(0);
+        destruir_lista(lista);
+        if (hbrBackground != NULL) DeleteObject(hbrBackground);
+        PostQuitMessage(0);
         break;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+//WndProc da janela de seleção
+LRESULT CALLBACK WndProcMetodo(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+        case WM_CREATE:
+        {
+            criarText(janelaMetodo, "Escolha o metodo de impressao:", 40, 20, 500, 40, 0, NULL);
+//
+//            hMetodoFrente = CreateWindow(
+//                "BUTTON", "Frente para Tras",
+//                WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+//                40, 70, 220, 40,
+//                hwnd, (HMENU)ID_METODO_FRENTE, NULL, NULL);
+//
+//            hMetodoInverso = CreateWindow(
+//                "BUTTON", "Tras para Frente",
+//                WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+//                40, 120, 220, 40,
+//                hwnd, (HMENU)ID_METODO_INVERSO, NULL, NULL);
+//
+//            // Define padrão
+//            SendMessage(hMetodoFrente, BM_SETCHECK, BST_CHECKED, 0);
+//            impressao = 0;
+//
+//            hMetodoOK = criarBotao(
+//                hwnd, "OK",
+//                300, 120, 120, 40,
+//                ID_METODO_OK, NULL);
+
+        break;
+    }
+
+        case WM_COMMAND:
+        {
+            switch (LOWORD(wParam))
+            {
+//                case ID_METODO_FRENTE:
+//                    impressao = 0;
+//                break;
+//
+//                case ID_METODO_INVERSO:
+//                    impressao = 1;
+//                break;
+//
+//                case ID_METODO_OK:
+//                    ShowWindow(hwnd, SW_HIDE);
+//                break;
+            }
+            break;
+        }
+
+        case WM_CLOSE:
+            ShowWindow(hwnd, SW_HIDE); // não destrói, só esconde
+            return 0;
+        }
+
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-
-    setlocale(LC_ALL, "Portuguese");
-
     hbrBackground = CreateSolidBrush(RGB(255, 255, 255));
+
     WNDCLASS wc = {0};
-    wc.lpfnWndProc = WndProc;
-    wc.hInstance = hInstance;
-    wc.lpszClassName = "Default";
+    wc.lpfnWndProc   = WndProc;
+    wc.hInstance     = hInstance;
+    wc.lpszClassName = L"IMPRESSORA_APP";
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = hbrBackground;
 
+    WNDCLASS wcMetodo = {0};
+    wcMetodo.lpfnWndProc   = WndProcMetodo;
+    wcMetodo.hInstance     = hInstance;
+    wcMetodo.lpszClassName = L"JANELA_METODO";
+    wcMetodo.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    wcMetodo.hbrBackground = hbrBackground;
+
+
     RegisterClass(&wc);
+    RegisterClass(&wcMetodo);
+    SetProcessDPIAware();
 
-    // Janela principal -----------------------------------------------------------------------------------------------------------------------
+    // Cria Janela Principal
+    HWND hwnd = criarJanela("IMPRESSORA_APP", "Software de Impressão", 900, 620, NULL, hInstance);
 
-    HWND hwnd = criarJanela("Default", "Software de Impressao", 900, 620, NULL, hInstance);
-
-    hTextoFixo = criarText(hwnd, "Software de Impressao", 220, 40, 600, 100, ID_Titulo, hInstance);
-
-    hBtnImprimir = criarBotao(hwnd, "Imprimir", 50, 120, 800, 90, ID_Imprimir, hInstance);
-
-    hBtnArquivo = criarBotao(hwnd, "Adicionar arquivo", 50, 230, 390, 90, ID_Arquivo, hInstance); // 50, 340, 390, 90
-
-    hBtnArquivoRemover = criarBotao(hwnd, "Remover arquivo", 460, 230, 390, 90, ID_remover, hInstance);
-
-    hBtnImpressora = criarBotao(hwnd, "Adicionar impressora", 460, 340, 390, 90, ID_Impressora, hInstance);
-
-    hBtnMetodo = criarBotao(hwnd, "Escolher metodo de impressao", 50, 450, 390, 90, ID_MetodoImpressao, hInstance);
-
-    hBtnFila = criarBotao(hwnd, "Visualizar fila de impressao", 50, 340, 390, 90, ID_VisualizarFila, hInstance);
-
-    hBtnSair = criarBotao(hwnd, "Sair", 460, 450, 390, 90, ID_Sair, hInstance);
+    // Cria Janela de Escolha de Metodo
+    janelaMetodo = criarJanela("JANELA_METODO", "Selecao de Metodo", 600, 220, hwnd, hInstance);
+    ShowWindow(janelaMetodo, 0);
 
     ShowWindow(hwnd, nCmdShow);
+    UpdateWindow(hwnd);
 
-    // Janela adicionar arquivo---------------------------------------------------------------------------------------------------------------
-
-    janelaArquivo = criarJanela("Default", "Path", 700, 200, hwnd, hInstance);
-
-    textoArquivo = criarText(janelaArquivo, "Digite o path absoluto: ", 50, 20, 600, 30, ID_Texto, hInstance);
-
-    inputArquivo = criarInput(janelaArquivo, 50, 55, 600, 30, ID_Edit, hInstance);
-
-    submitArquivo = criarBotao(janelaArquivo, "Submit", 300, 100, 110, 40, ID_SubmitArquivo, hInstance);
-
-    // Janela adicionar impressora------------------------------------------------------------------------------------------------------------
-
-    janelaImpressora = criarJanela("Default", "Impressora", 700, 200, hwnd, hInstance);
-
-    textoImpressora = criarText(janelaImpressora, "Digite o nome da impressora: ", 50, 20, 600, 30, ID_Texto, hInstance);
-
-    inputImpressora = criarInput(janelaImpressora, 50, 55, 600, 30, ID_Edit, hInstance);
-
-    submitImpressora = criarBotao(janelaImpressora, "Submit", 300, 100, 110, 40, ID_SubmitImpressora, hInstance);
-
-    MSG msg = {0};
+    MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
