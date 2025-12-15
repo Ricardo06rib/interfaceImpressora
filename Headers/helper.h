@@ -16,7 +16,8 @@
 #define ID_ImprimirInverso 7
 #define ID_remover 8
 
-#define ID_SubmitArquivo 30
+#define ID_Frente 40
+#define ID_Tras 41
 
 #define NORMAL 400
 #define BOLD 700

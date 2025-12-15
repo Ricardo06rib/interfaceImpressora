@@ -10,8 +10,9 @@
 
 //modo de impressão
 int impressao = 0;
-//0-> frente para tras
-//1-> tras para frente
+//0-> não selecionado
+//1-> frente para tras
+//2-> tras para frente
 
 //cor
 HBRUSH hbrBackground = NULL;
@@ -25,9 +26,11 @@ HWND hBtnArquivoRemover;
 HWND hBtnMetodo;
 HWND hBtnFila;
 HWND hBtnSair;
+HWND hTextoMetodo;
 
 //janela metodo de impressao
 HWND janelaMetodo;
+HWND textoMetodo;
 HWND botao1Metodo;
 HWND botao2Metodo;
 
@@ -78,7 +81,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 break;
             }
 
-            if (GetFileAttributesA(caminho) == INVALID_FILE_ATTRIBUTES)//ver isso dps
+            if (GetFileAttributesA(caminho) == INVALID_FILE_ATTRIBUTES)
             {
                 MessageBoxA(hwnd, "Arquivo nao encontrado.", "Erro", MB_ICONERROR);
                 break;
@@ -90,48 +93,63 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
 
-
-        case ID_ImprimirInverso:
-        {
-            if (esta_vazia(lista)) {
-                MessageBoxA(hwnd, "Fila vazia", "Erro", MB_ICONERROR);
-                break;
-            }
-
-            char impressora[256];
-            DWORD tam = sizeof(impressora);
-
-            if (!GetDefaultPrinterA(impressora, &tam)) {
-                MessageBoxA(hwnd, "Nenhuma impressora padrao encontrada", "Erro", MB_ICONERROR);
-                break;
-            }
-
-            impressoraTrasPFrente(lista, impressora);
-
-            MessageBoxA(hwnd, "Impressao inversa concluida.", "OK", MB_OK);
-            break;
-        }
-
         case ID_Imprimir:
         {
-            if (esta_vazia(lista)) {
-            MessageBoxA(hwnd, "Fila vazia", "Erro", MB_ICONERROR);
-            break;
-            }
+            switch (impressao)
+            {
+                case 1:
+                {
+                    if (esta_vazia(lista)) {
+                        MessageBoxA(hwnd, "Fila vazia", "Erro", MB_ICONERROR);
+                        break;
+                   }
 
-            char impressora[256];
-            DWORD tam = sizeof(impressora);
+                   char impressora[256];
+                    DWORD tam = sizeof(impressora);
 
-            if (!GetDefaultPrinterA(impressora, &tam)) {
-                MessageBoxA(hwnd, "Nenhuma impressora padrao encontrada", "Erro", MB_ICONERROR);
+                    if (!GetDefaultPrinterA(impressora, &tam)) {
+                        MessageBoxA(hwnd, "Nenhuma impressora padrao encontrada", "Erro", MB_ICONERROR);
+                        break;
+                    }
+
+                    impressoraFrentePTras(lista, impressora);
+
+                    MessageBoxA(hwnd, "Impressao concluida.", "OK", MB_OK);
+                break;
+                }
+
+
+                case 2:
+                {
+                    if (esta_vazia(lista)) {
+                        MessageBoxA(hwnd, "Fila vazia", "Erro", MB_ICONERROR);
+                        break;
+                    }
+
+                    char impressora[256];
+                    DWORD tam = sizeof(impressora);
+
+                    if (!GetDefaultPrinterA(impressora, &tam)) {
+                         MessageBoxA(hwnd, "Nenhuma impressora padrao encontrada", "Erro", MB_ICONERROR);
+                         break;
+                    }
+
+                    impressoraTrasPFrente(lista, impressora);
+
+                    MessageBoxA(hwnd, "Impressao inversa concluida.", "OK", MB_OK);
+
+                    break;
+                }
+
+            default:
+            {
+                MessageBoxA(hwnd, "Metodo de impressao nao selecionado", "Fila", MB_OK);
                 break;
             }
 
-            impressoraFrentePTras(lista, impressora);
-
-            MessageBoxA(hwnd, "Impressao concluida.", "OK", MB_OK);
             break;
-}
+
+        }
 
         case ID_VisualizarFila:
             {
@@ -199,6 +217,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
         }
 
+    case WM_CTLCOLORSTATIC:
+        HDC hdcStatic = (HDC)wParam;
+
+        SetBkMode(hdcStatic, TRANSPARENT);
+        return (LRESULT)GetStockObject(NULL_BRUSH);
+
 
     case WM_DESTROY:
         destruir_lista(lista);
@@ -206,68 +230,58 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;
     }
-
+    }
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
 //WndProc da janela de seleção
-LRESULT CALLBACK WndProcMetodo(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK WndProcMetodo(HWND janelaMetodo, UINT msg, WPARAM wParam, LPARAM lParam){
     switch (msg)
     {
         case WM_CREATE:
         {
-            criarText(janelaMetodo, "Escolha o metodo de impressao:", 40, 20, 500, 40, 0, NULL);
-//
-//            hMetodoFrente = CreateWindow(
-//                "BUTTON", "Frente para Tras",
-//                WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-//                40, 70, 220, 40,
-//                hwnd, (HMENU)ID_METODO_FRENTE, NULL, NULL);
-//
-//            hMetodoInverso = CreateWindow(
-//                "BUTTON", "Tras para Frente",
-//                WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
-//                40, 120, 220, 40,
-//                hwnd, (HMENU)ID_METODO_INVERSO, NULL, NULL);
-//
-//            // Define padrão
-//            SendMessage(hMetodoFrente, BM_SETCHECK, BST_CHECKED, 0);
-//            impressao = 0;
-//
-//            hMetodoOK = criarBotao(
-//                hwnd, "OK",
-//                300, 120, 120, 40,
-//                ID_METODO_OK, NULL);
+            textoMetodo = criarText(janelaMetodo, "Escolha o metodo de impressao:", 25, 20, 450, 100, ID_Texto, NULL);
+            mudaFonte(textoMetodo, criarFonte(24, 400, "Arial"));
+
+            botao1Metodo = criarBotao(janelaMetodo, "Imprimir em ordem (frente -> tras)", 25, 75, 350, 50, ID_Frente, NULL);
+
+            botao2Metodo = criarBotao(janelaMetodo, "Imprimir na ordem inversa (tras -> frente)", 25, 150, 350, 50, ID_Tras, NULL);
+
 
         break;
+
+        case WM_CTLCOLORSTATIC:
+            HDC hdcStatic = (HDC)wParam;
+
+            SetBkMode(hdcStatic, TRANSPARENT);
+            return (LRESULT)GetStockObject(NULL_BRUSH);
+
     }
 
         case WM_COMMAND:
         {
             switch (LOWORD(wParam))
             {
-//                case ID_METODO_FRENTE:
-//                    impressao = 0;
-//                break;
-//
-//                case ID_METODO_INVERSO:
-//                    impressao = 1;
-//                break;
-//
-//                case ID_METODO_OK:
-//                    ShowWindow(hwnd, SW_HIDE);
-//                break;
+                case ID_Frente:
+                    impressao = 1;
+                    ShowWindow(janelaMetodo, SW_HIDE);
+                break;
+
+                case ID_Tras:
+                    impressao = 2;
+                    ShowWindow(janelaMetodo, SW_HIDE);
+                break;
+
             }
             break;
         }
 
         case WM_CLOSE:
-            ShowWindow(hwnd, SW_HIDE); // não destrói, só esconde
+            ShowWindow(janelaMetodo, SW_HIDE);
             return 0;
         }
 
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+        return DefWindowProc(janelaMetodo, msg, wParam, lParam);
     }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -294,10 +308,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetProcessDPIAware();
 
     // Cria Janela Principal
-    HWND hwnd = criarJanela("IMPRESSORA_APP", "Software de Impressão", 900, 620, NULL, hInstance);
+    hwnd = criarJanela("IMPRESSORA_APP", "Software de Impressão", 900, 620, NULL, hInstance);
 
     // Cria Janela de Escolha de Metodo
-    janelaMetodo = criarJanela("JANELA_METODO", "Selecao de Metodo", 600, 220, hwnd, hInstance);
+    janelaMetodo = criarJanela("JANELA_METODO", "Selecao de Metodo", 420, 300, hwnd, hInstance);
     ShowWindow(janelaMetodo, 0);
 
     ShowWindow(hwnd, nCmdShow);
@@ -312,3 +326,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     return 0;
 }
+
+
